@@ -40,11 +40,6 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-100">
       {/* Window chrome — matches wireframe title bar */}
       <div className="bg-gray-200 border-b border-gray-400 px-3 py-1 flex items-center justify-center relative">
-        <div className="absolute left-3 flex gap-1.5">
-          <div className="w-3.5 h-3.5 rounded-full bg-red-500 border border-red-600" />
-          <div className="w-3.5 h-3.5 rounded-full bg-yellow-400 border border-yellow-500" />
-          <div className="w-3.5 h-3.5 rounded-full bg-green-500 border border-green-600" />
-        </div>
         <span className="text-sm font-medium text-gray-700">Home</span>
       </div>
 
@@ -98,7 +93,7 @@ export default function HomePage() {
                   >
                     {COLUMNS.map(col => (
                       <td key={col.key} className="border border-gray-100 px-3 py-1.5 text-gray-700 whitespace-nowrap">
-                        {getCellValue(order, col.key)}
+                        {getCellValue(order, col)}
                       </td>
                     ))}
                     <td className="border border-gray-100 px-2 py-1.5 text-center">
