@@ -1,0 +1,48 @@
+# ──────────────────────────────────────────────
+# Sales Order App — .gitignore
+# ──────────────────────────────────────────────
+
+# ── macOS ──────────────────────────────────────
+.DS_Store
+__MACOSX/
+*.AppleDouble
+*.LSOverride
+
+# ── Editor / IDE ───────────────────────────────
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+*.swp
+*.swo
+
+# ── Backend — Spring Boot / Maven ──────────────
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.log
+!backend/.mvn/wrapper/maven-wrapper.properties
+
+# IMPORTANT: keep application.properties in repo
+# but the reviewer must update DB credentials.
+# See README for setup instructions.
+
+# ── Frontend — React / Node ────────────────────
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# ── Logs ───────────────────────────────────────
+*.log
+logs/
+
+# ── OS misc ────────────────────────────────────
+Thumbs.db
+ehthumbs.db
