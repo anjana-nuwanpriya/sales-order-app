@@ -1,140 +1,25 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { loadClients } from '../redux/slices/clientsSlice';
-import { loadItems } from '../redux/slices/itemsSlice';
-import { saveOrder, loadOrderById, clearCurrent } from '../redux/slices/ordersSlice';
+import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
-import { num, fmt, calcLine, emptyLine, emptyForm } from '../utils/helpers';
+import { fmt } from '../utils/helpers';
+import useOrderForm from '../hooks/useOrderForm';
 
 export default function SalesOrderPage() {
-  const { id } = useParams();
-  const isEdit = Boolean(id);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
   const printRef = useRef();
-
-  const { list: clients } = useSelector(s => s.clients);
-  const { list: items }   = useSelector(s => s.items);
-  const { current: loadedOrder, saving, error } = useSelector(s => s.orders);
-
-  const [form, setForm]   = useState(emptyForm());
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    dispatch(loadClients());
-    dispatch(loadItems());
-    if (isEdit) dispatch(loadOrderById(id));
-    return () => { dispatch(clearCurrent()); };
-  }, [dispatch, id, isEdit]);
-
-  useEffect(() => {
-    if (isEdit && loadedOrder) {
-      setForm({
-        clientId:     loadedOrder.clientId?.toString() || '',
-        customerName: loadedOrder.customerName  || '',
-        address1:     loadedOrder.address1      || '',
-        address2:     loadedOrder.address2      || '',
-        address3:     loadedOrder.address3      || '',
-        suburb:       loadedOrder.suburb        || '',
-        state:        loadedOrder.state         || '',
-        postCode:     loadedOrder.postCode      || '',
-        invoiceNo:    loadedOrder.invoiceNo     || '',
-        invoiceDate:  loadedOrder.invoiceDate   || '',
-        referenceNo:  loadedOrder.referenceNo   || '',
-        note:         loadedOrder.note          || '',
-        orderLines: loadedOrder.orderLines?.length
-          ? loadedOrder.orderLines.map(l => ({ ...l, _key: Math.random() }))
-          : [emptyLine()],
-      });
-    }
-  }, [loadedOrder, isEdit]);
-
-  const totals = React.useMemo(() => {
-    let excl = 0, tax = 0;
-    form.orderLines.forEach(l => {
-      excl += num(l.exclAmount);
-      tax  += num(l.taxAmount);
-    });
-    return { excl, tax, incl: excl + tax };
-  }, [form.orderLines]);
-
-  const handleFieldChange = (field, value) =>
-    setForm(f => ({ ...f, [field]: value }));
-
-  const handleClientSelect = (clientId) => {
-    const client = clients.find(c => c.id.toString() === clientId);
-    if (client) {
-      setForm(f => ({
-        ...f, clientId,
-        customerName: client.customerName,
-        address1: client.address1 || '',
-        address2: client.address2 || '',
-        address3: client.address3 || '',
-        suburb:   client.suburb   || '',
-        state:    client.state    || '',
-        postCode: client.postCode || '',
-      }));
-    } else {
-      setForm(f => ({ ...f, clientId }));
-    }
-  };
-
-  const updateLine = useCallback((idx, field, value) => {
-    setForm(f => {
-      const lines = [...f.orderLines];
-      let line = { ...lines[idx], [field]: value };
-      if (field === 'itemCode') {
-        const item = items.find(i => i.itemCode === value);
-        if (item) {
-          line.itemId      = item.id;
-          line.itemCode    = item.itemCode;
-          line.description = item.description;
-          line.price       = item.price;
-        }
-      }
-      if (field === 'description') {
-        const item = items.find(i => i.description === value);
-        if (item) {
-          line.itemId      = item.id;
-          line.itemCode    = item.itemCode;
-          line.description = item.description;
-          line.price       = item.price;
-        }
-      }
-      lines[idx] = calcLine(line);
-      return { ...f, orderLines: lines };
-    });
-  }, [items]);
-
-  const addLine    = () => setForm(f => ({ ...f, orderLines: [...f.orderLines, emptyLine()] }));
-  const removeLine = (idx) => setForm(f => ({ ...f, orderLines: f.orderLines.filter((_, i) => i !== idx) }));
-
-  const handleSave = async () => {
-    const payload = {
-      ...form,
-      clientId: parseInt(form.clientId),
-      orderLines: form.orderLines
-        .filter(l => l.itemCode || l.description)
-        .map((l, i) => ({
-          ...l,
-          lineNumber:  i + 1,
-          quantity:    num(l.quantity),
-          price:       num(l.price),
-          taxRate:     num(l.taxRate),
-          exclAmount:  num(l.exclAmount),
-          taxAmount:   num(l.taxAmount),
-          inclAmount:  num(l.inclAmount),
-        })),
-    };
-    const result = await dispatch(saveOrder({ id: isEdit ? id : null, data: payload }));
-    if (!result.error) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-      if (!isEdit && result.payload?.id)
-        navigate(`/orders/${result.payload.id}`, { replace: true });
-    }
-  };
+  const {
+    form,
+    saved,
+    saving,
+    error,
+    clients,
+    items,
+    totals,
+    handleFieldChange,
+    handleClientSelect,
+    updateLine,
+    addLine,
+    removeLine,
+    handleSave,
+  } = useOrderForm();
 
   const handlePrint = useReactToPrint({ content: () => printRef.current });
 
@@ -192,7 +77,6 @@ export default function SalesOrderPage() {
 
             {/* LEFT: Customer fields */}
             <div className="space-y-1.5">
-              {/* Customer Name dropdown */}
               <div className="flex items-center gap-2">
                 <label className="w-28 text-sm text-gray-700 shrink-0">Customer Name</label>
                 <select
@@ -207,7 +91,6 @@ export default function SalesOrderPage() {
                 </select>
               </div>
 
-              {/* Address fields — using FormInput component */}
               {[
                 ['address1', 'Address 1'],
                 ['address2', 'Address 2'],
